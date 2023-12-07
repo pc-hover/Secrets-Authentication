@@ -6,7 +6,7 @@
 //         -> Some data from code can be stored in external .env {environment variable} file such as encryption key ,api key etc
 // Level 3 -> Hashing using Md5 
 // Level 4 -> Hashing using bcrypt / Salting / Salting Rounds 
-// Level 5 -> Passports
+// Level 5 -> passport-loca;-mongoose {Session 276}
 
 //jshint esversion:6
 require('dotenv').config();
@@ -90,15 +90,52 @@ app.get("/register",(req,res)=>{
 app.get("/logout",(req,res)=>{
   res.render("home.ejs"); 
 });
-
-app.post("/login", async (req, res) => {
-
+app.get("/secrets",(req,res)=>{
+  
+    if(req.isAuthenticated())
+    {
+        res.render("secrets.ejs");
+    }
+    else{
+        res.redirect("/login");
+    }
 });
+
 
 app.post("/register",async (req,res)=>{
-
+User.register({username: req.body.username},req.body.password,function (err,user) {
+    if(err)
+    {
+        console.log(err);
+        res.redirect("/register");
+    }
+    else{
+       passport.authenticate("local")(req,res,function(){//here "local" is the strategy we are using for basic username password  authenticate 
+        res.redirect("/secrets");
+       })
+    }
+    
+})
 });
 // console.log(md5("priyanshu123"));
+
+app.post("/login", (req, res) => {
+
+    const user = new User({
+        username:req.body.username,
+        password:req.body.password
+    });
+req.login(user, function(err) {
+if (err) { 
+    console.log(err);
+ }
+ else{ 
+    passport.authenticate("local")(req,res,function (){ //Here "local" is the STRATEGY
+        res.redirect("/secrets");
+    });
+}});
+});
+
 
 app.listen(port,()=>{
     console.log(`Server running at port : ${port}`);
