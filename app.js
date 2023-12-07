@@ -66,7 +66,13 @@ const secret = process.env.SECRET;
 //Level - 5 
 const User = mongoose.model("Users",secretSchema);
 
+/*createStrategy(): This method is provided by passport-local-mongoose to set up the local authentication strategy. When you call User.createStrategy(), it creates a Passport LocalStrategy with the appropriate configuration for a Mongoose User model.
+
+This line essentially tells Passport to use the local strategy for authentication, where user credentials (usually a username and password) are verified against the user model in your MongoDB collection. */
 passport.use(User.createStrategy());
+
+
+/*The passport.serializeUser and passport.deserializeUser functions are used to store and retrieve the user information in the session. They work in conjunction with the passport-local-mongoose plugin. */
 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
@@ -85,53 +91,11 @@ app.get("/logout",(req,res)=>{
   res.render("home.ejs"); 
 });
 
-// app.post("/login",async (req,res)=>{
-// const email = req.body.username;
-// const password = req.body.password;
-
-// User.find({email:email})
-// .then(foundUser=>{
-//      if(foundUser.password === password)
-//     {
-//         res.render("secrets");
-//     }
-// })
-// .catch(err=>{
-//     console.log(err);
-// })
-
-// });
-
 app.post("/login", async (req, res) => {
-    //1. check user exits or not in database using email
-    //2 if yes then bcrypt.compare user entered password with hash saved in db that is foundUser.password
-    
+
 });
 
-// User.findById(id)
-// .then(user => {
-//  done(null, user);
-// })
-// .catch(err => {
-//   done(err, null);
-// });
 app.post("/register",async (req,res)=>{
-    bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
-    // Store hash in your password DB.
-const newUser = new User(
-{
-     email : req.body.username,
-     password : hash
-});
-try{
-newUser.save();
-res.render("secrets");
-}
-catch(err)
-{
-    console.log(err);
-}
-});
 
 });
 // console.log(md5("priyanshu123"));
