@@ -6,7 +6,8 @@
 //         -> Some data from code can be stored in external .env {environment variable} file such as encryption key ,api key etc
 // Level 3 -> Hashing using Md5 
 // Level 4 -> Hashing using bcrypt / Salting / Salting Rounds 
-// Level 5 -> passport-loca;-mongoose {Session 276}
+// Level 5 -> passport-local-mongoose {Session 276}
+// Level 6 -> OAuth 2.0 google-strategy  
 
 //jshint esversion:6
 require('dotenv').config();
@@ -21,6 +22,9 @@ const mongoose = require("mongoose");
 const session = require('express-session');
 const passport = require("passport");
 const passportLocalMongoose = require("passport-local-mongoose");//No need for "passport-local" it will be required by "passport-local-mongoose"
+
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const findOrCreate = require("mongoose-findorcreate");
 
 const app = express();
 const port =3000;
@@ -55,12 +59,15 @@ const secretSchema = new mongoose.Schema({
     password:{
         type:String,
         require:true
-    }
+    },
+    googleId:String
 });
 
 secretSchema.plugin(passportLocalMongoose);
-
+secretSchema.plugin(findOrCreate);
 const secret = process.env.SECRET;
+
+
 //here scret is is an encryption key using which passworrd is encrypted
 
 //Level - 5 
@@ -69,18 +76,58 @@ const User = mongoose.model("Users",secretSchema);
 /*createStrategy(): This method is provided by passport-local-mongoose to set up the local authentication strategy. When you call User.createStrategy(), it creates a Passport LocalStrategy with the appropriate configuration for a Mongoose User model.
 
 This line essentially tells Passport to use the local strategy for authentication, where user credentials (usually a username and password) are verified against the user model in your MongoDB collection. */
-passport.use(User.createStrategy());
+// passport.use(User.createStrategy());
 
 
 /*The passport.serializeUser and passport.deserializeUser functions are used to store and retrieve the user information in the session. They work in conjunction with the passport-local-mongoose plugin. */
 
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
 
+passport.serializeUser((user, done) => {
+done(null,user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    // Deserialize user by fetching the user from the database using the stored identifier
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
+
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: "https://localhost:3000/auth/google/secrets"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    console.log(profile);
+    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });//findorcreate is not a mongoose func we either need to write similar code using mongoose functions or  we can use it using mongoosefindorcreate npm package 
+  }
+));
 
 app.get("/",(req,res)=>{
 res.render("home.ejs");
 });
+
+app.get("/auth/google",
+    passport.authenticate('google',{scope:['profile']})
+    );
+
+  app.get('/auth/google/secrets', 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect secrets.
+    res.redirect('/secrets');
+  }); 
+
+
 app.get("/login",(req,res)=>{
     res.render("login.ejs");
 });
