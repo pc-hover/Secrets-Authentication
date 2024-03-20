@@ -51,6 +51,3 @@ This is a simple web application that demonstrates various levels of authenticat
 
 Feel free to contribute by submitting issues or pull requests. Your feedback and suggestions are highly appreciated.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
